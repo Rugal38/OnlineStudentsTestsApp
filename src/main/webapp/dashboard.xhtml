@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html">
+
+<h:head>
+    <title>Dashboard</title>
+    
+</h:head>
+
+<h:body style="font-family: Arial; margin: 30px;">
+    <h2>✅ Bienvenue</h2>
+
+
+    <h:panelGrid columns="2" cellpadding="5">
+        <h:outputText value="Nom:" />
+        <h:outputText value="#{loginBean.candidat.nom}" />
+
+        <h:outputText value="Prenom:" />
+        <h:outputText value="#{loginBean.candidat.prenom}" />
+
+        <h:outputText value="Email:" />
+        <h:outputText value="#{loginBean.candidat.email}" />
+
+        <h:outputText value="Ecole:" />
+        <h:outputText value="#{loginBean.candidat.ecole}" />
+
+        <h:outputText value="Filiere:" />
+        <h:outputText value="#{loginBean.candidat.filiere}" />
+
+        <h:outputText value="Code Session:" />
+        <h:outputText value="#{loginBean.candidat.codeSession}" />
+    </h:panelGrid>
+
+    <br/>
+
+    <h:form>
+        <h:commandButton value="Logout" action="#{loginBean.logout}" />
+    </h:form>
+</h:body>
+
+</html>

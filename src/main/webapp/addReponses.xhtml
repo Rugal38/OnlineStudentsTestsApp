@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<f:view xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:h="jakarta.faces.html"
+        xmlns:f="jakarta.faces.core">
+
+    <f:metadata>
+        <f:viewParam name="qid" value="#{adminReponseBean.questionId}" />
+        <f:viewAction action="#{adminReponseBean.loadByQuestion}" />
+    </f:metadata>
+
+    <h:head>
+        <title>Ajouter Réponses</title>
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+        <style>
+            .page-card { border-radius: 16px; }
+            .table thead th { white-space: nowrap; }
+        </style>
+    </h:head>
+
+    <h:body class="bg-light">
+
+        <div class="container py-4" style="max-width: 1100px;">
+
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <div>
+                    <h2 class="mb-1">Ajouter des réponses</h2>
+                    <div class="text-muted">
+                        Type de question: <strong>#{adminReponseBean.questionType}</strong>
+                    </div>
+                </div>
+
+                <h:link value="⬅ Retour Questions"
+                        outcome="adminQuestions.xhtml"
+                        styleClass="btn btn-outline-secondary"/>
+            </div>
+
+            <!-- Global validation errors -->
+            <h:messages globalOnly="true" styleClass="alert alert-danger"/>
+
+            <!-- No qid -->
+            <h:panelGroup rendered="#{empty adminReponseBean.questionId}">
+                <div class="alert alert-warning">
+                    ⚠️ Ma kaynch qid f URL. Rje3 l liste w khtar <strong>Réponses</strong>.
+                </div>
+
+                <h:link value="Retour Questions"
+                        outcome="adminQuestions.xhtml"
+                        styleClass="btn btn-secondary"/>
+            </h:panelGroup>
+
+            <!-- Has qid -->
+            <h:panelGroup rendered="#{not empty adminReponseBean.questionId}">
+
+                <div class="card shadow-sm page-card mb-3">
+                    <div class="card-body p-4">
+
+                        <h4 class="mb-3">➕ Ajouter une réponse</h4>
+
+                        <!-- Add form -->
+                        <h:form>
+                            <div class="row g-3 align-items-end">
+
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label">Texte</label>
+                                    <h:inputText value="#{adminReponseBean.form.texte}"
+                                                 required="true"
+                                                 styleClass="form-control"/>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <div class="form-check mt-4">
+                                        <h:selectBooleanCheckbox value="#{adminReponseBean.form.correcte}"
+                                                                 id="corr"
+                                                                 styleClass="form-check-input"/>
+                                        <label class="form-check-label" for="corr">Correcte</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-end gap-2 mt-2">
+                                        <h:commandButton value="Ajouter"
+                                                         action="#{adminReponseBean.add}"
+                                                         styleClass="btn btn-primary"/>
+
+                                        <h:commandButton value="Retour Questions"
+                                                         action="#{adminReponseBean.backToQuestions}"
+                                                         immediate="true"
+                                                         styleClass="btn btn-outline-secondary"/>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </h:form>
+
+                    </div>
+                </div>
+
+                <!-- List -->
+                <div class="card shadow-sm page-card">
+                    <div class="card-body p-4">
+
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                            <h4 class="mb-0">Liste des réponses</h4>
+                            <span class="badge text-bg-secondary">
+                                Total: #{adminReponseBean.reponses.size()}
+                            </span>
+                        </div>
+
+                        <div class="table-responsive mt-3">
+                            <h:form>
+                                <h:dataTable value="#{adminReponseBean.reponses}" var="r"
+                                             styleClass="table table-striped table-bordered align-middle">
+
+                                    <h:column>
+                                        <f:facet name="header">ID</f:facet>
+                                        #{r.id}
+                                    </h:column>
+
+                                    <h:column>
+                                        <f:facet name="header">Texte</f:facet>
+                                        #{r.texte}
+                                    </h:column>
+
+                                    <h:column>
+                                        <f:facet name="header">Correcte</f:facet>
+                                        <span class="badge #{r.correcte ? 'text-bg-success' : 'text-bg-secondary'}">
+                                            #{r.correcte ? 'Oui' : 'Non'}
+                                        </span>
+                                    </h:column>
+
+                                    <h:column>
+                                        <f:facet name="header">Actions</f:facet>
+                                        <h:commandButton value="Delete"
+                                                         action="#{adminReponseBean.delete(r.id)}"
+                                                         onclick="return confirm('Supprimer cette réponse ?');"
+                                                         styleClass="btn btn-sm btn-outline-danger"/>
+                                    </h:column>
+
+                                </h:dataTable>
+                            </h:form>
+                        </div>
+
+                    </div>
+                </div>
+
+            </h:panelGroup>
+
+        </div>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    </h:body>
+</f:view>

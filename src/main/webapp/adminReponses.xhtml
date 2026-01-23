@@ -1,0 +1,53 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core">
+
+
+<h:head>
+    <title>Liste Réponses</title>
+</h:head>
+
+<h:body style="font-family:Arial; margin:30px;">
+
+    <h2>📌 Réponses Question ID = #{adminReponseBean.questionId}</h2>
+
+    <h:form>
+        <h:commandButton value="➕ Ajouter Réponse" action="#{adminQuestionBean.goAdd}" />
+        &nbsp;
+        <h:commandButton value="⬅ Retour Questions" action="#{adminReponseBean.backToQuestions}" immediate="true" />
+    </h:form>
+
+    <br/>
+
+    <h:form>
+        <h:dataTable value="#{adminReponseBean.reponses}" var="r" border="1" cellpadding="6">
+
+            <h:column>
+                <f:facet name="header">ID</f:facet>
+                #{r.id}
+            </h:column>
+
+            <h:column>
+                <f:facet name="header">Texte</f:facet>
+                #{r.texte}
+            </h:column>
+
+            <h:column>
+                <f:facet name="header">Correct</f:facet>
+                #{r.correcte}
+            </h:column>
+
+            <h:column>
+                <f:facet name="header">Actions</f:facet>
+
+                <h:commandButton value="Edit" action="#{adminQuestionBean.goEdit(r)}" />
+                &nbsp;
+                <h:commandButton value="Delete" action="#{adminReponseBean.delete(r.id)}" onclick="return confirm('Supprimer ?');" />
+
+            </h:column>
+
+        </h:dataTable>
+    </h:form>
+
+</h:body>
+</html>

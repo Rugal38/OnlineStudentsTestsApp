@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<f:view xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:h="jakarta.faces.html"
+        xmlns:f="jakarta.faces.core"
+        transient="true">
+
+<h:head>
+    <title>Inscription</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+    <style>
+        .page-card { border-radius: 16px; }
+    </style>
+</h:head>
+
+<h:body class="bg-light">
+
+<div class="container py-5" style="max-width: 900px;">
+
+    <div class="text-center mb-4">
+        <h1 class="mb-1">Inscription candidat</h1>
+        <div class="text-muted">Remplissez vos informations pour créer votre inscription.</div>
+    </div>
+
+    <div class="card shadow-sm page-card">
+        <div class="card-body p-4">
+
+            <h:form id="formInscription">
+
+                <!-- Messages JSF (required / validations) -->
+                <h:messages globalOnly="true"
+                            styleClass="alert alert-danger"
+                            rendered="#{facesContext.maximumSeverity != null}"/>
+
+                <div class="row g-3">
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Nom</label>
+                        <h:inputText value="#{inscriptionBean.nom}" required="true"
+                                     requiredMessage="Nom obligatoire"
+                                     styleClass="form-control"/>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Prénom</label>
+                        <h:inputText value="#{inscriptionBean.prenom}" required="true"
+                                     requiredMessage="Prénom obligatoire"
+                                     styleClass="form-control"/>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Email</label>
+                        <h:inputText value="#{inscriptionBean.email}" required="true"
+                                     requiredMessage="Email obligatoire"
+                                     validatorMessage="Format d'e-mail incorrect"
+                                     styleClass="form-control">
+                            <!-- Expression régulière simple pour l'e-mail -->
+                            <f:validateRegex pattern="^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"/>
+                        </h:inputText>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">GSM</label>
+                        <h:inputText value="#{inscriptionBean.gsm}"
+                                     validatorMessage="Le GSM doit contenir uniquement des chiffres (10 à 15)."
+                                     styleClass="form-control">
+                            <f:validateRegex pattern="^[0-9]{10,15}$"/>
+                        </h:inputText>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">École</label>
+                        <h:inputText value="#{inscriptionBean.ecole}"
+                                     styleClass="form-control"/>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Filière</label>
+                        <h:inputText value="#{inscriptionBean.filiere}"
+                                     styleClass="form-control"/>
+                    </div>
+
+                </div>
+
+                <div class="d-grid mt-4">
+                    <h:commandButton value="S'inscrire"
+                                     action="#{inscriptionBean.inscrire}"
+                                     styleClass="btn btn-primary btn-lg"/>
+                </div>
+
+                <!-- Message personnalisé -->
+                <h:panelGroup rendered="#{not empty inscriptionBean.message}">
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <h:outputText value="#{inscriptionBean.message}" />
+                    </div>
+                </h:panelGroup>
+
+            </h:form>
+
+        </div>
+    </div>
+
+    <div class="text-center mt-3">
+        <h:link value="Déjà inscrit ? Se connecter"
+                outcome="login.xhtml"
+                styleClass="btn btn-link"/>
+    </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</h:body>
+</f:view>
