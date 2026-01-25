@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<f:view xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:h="jakarta.faces.html"
+        xmlns:f="jakarta.faces.core">
+    <f:metadata>
+        <f:viewAction action="#{adminTestSettingsBean.load}" />
+    </f:metadata>
+
+    <h:head>
+        <title>Paramètres Test (Global)</title>
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+        <style>
+            .page-card { border-radius: 16px; }
+        </style>
+    </h:head>
+
+    <h:body class="bg-light">
+
+        <div class="container py-4" style="max-width: 900px;">
+
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <div>
+                    <h2 class="mb-1">🧪 Paramètres Test (Global)</h2>
+                    <div class="text-muted">Configurer les paramètres globaux de passage des tests.</div>
+                </div>
+
+                <h:link value="⬅ Retour Dashboard"
+                        outcome="adminDashboard.xhtml"
+                        styleClass="btn btn-outline-secondary"/>
+            </div>
+
+            <!-- Bean message -->
+            <h:panelGroup rendered="#{not empty adminTestSettingsBean.message}">
+                <div class="alert #{adminTestSettingsBean.success ? 'alert-success' : 'alert-danger'}">
+                    <h:outputText value="#{adminTestSettingsBean.message}" />
+                </div>
+            </h:panelGroup>
+
+            <div class="card shadow-sm page-card">
+                <div class="card-body p-4">
+
+                    <h:form>
+
+                        <div class="row g-3">
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Nb questions par test</label>
+                                <h:inputText value="#{adminTestSettingsBean.settings.nbQuestions}"
+                                             required="true"
+                                             styleClass="form-control">
+                                    <f:convertNumber integerOnly="true" />
+                                </h:inputText>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Score par question</label>
+                                <h:inputText value="#{adminTestSettingsBean.settings.scoreParQuestion}"
+                                             required="true"
+                                             styleClass="form-control">
+                                    <f:convertNumber integerOnly="true" />
+                                </h:inputText>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Seuil de réussite (%)</label>
+                                <h:inputText value="#{adminTestSettingsBean.settings.seuilReussite}"
+                                             required="true"
+                                             styleClass="form-control">
+                                    <f:convertNumber integerOnly="true" />
+                                </h:inputText>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Max tentatives</label>
+                                <h:inputText value="#{adminTestSettingsBean.settings.maxTentatives}"
+                                             required="true"
+                                             styleClass="form-control">
+                                    <f:convertNumber integerOnly="true" />
+                                </h:inputText>
+                            </div>
+                            
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Durée par question (minutes)<br/><small>(0 = pas de limite)</small></label>
+                                <h:inputText value="#{adminTestSettingsBean.settings.duree}"
+                                             required="true"
+                                             styleClass="form-control">
+                                    <f:convertNumber integerOnly="true" />
+                                </h:inputText>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="row g-2 mt-1">
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-check">
+                                            <h:selectBooleanCheckbox value="#{adminTestSettingsBean.settings.shuffleQuestions}"
+                                                                     id="sq"
+                                                                     styleClass="form-check-input"/>
+                                            <label class="form-check-label" for="sq">Shuffle Questions</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-check">
+                                            <h:selectBooleanCheckbox value="#{adminTestSettingsBean.settings.shuffleReponses}"
+                                                                     id="sr"
+                                                                     styleClass="form-check-input"/>
+                                            <label class="form-check-label" for="sr">Shuffle Réponses</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-check">
+                                            <h:selectBooleanCheckbox value="#{adminTestSettingsBean.settings.afficherResultatFin}"
+                                                                     id="arf"
+                                                                     styleClass="form-check-input"/>
+                                            <label class="form-check-label" for="arf">Afficher Résultat à la fin</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-check">
+                                            <h:selectBooleanCheckbox value="#{adminTestSettingsBean.settings.afficherCorrection}"
+                                                                     id="ac"
+                                                                     styleClass="form-check-input"/>
+                                            <label class="form-check-label" for="ac">Afficher Correction</label>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <hr class="my-4"/>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <h:commandButton value="💾 Enregistrer"
+                                             action="#{adminTestSettingsBean.save}"
+                                             styleClass="btn btn-primary"/>
+
+                            <h:link value="⬅ Retour Dashboard"
+                                    outcome="adminDashboard.xhtml"
+                                    styleClass="btn btn-outline-secondary"/>
+                        </div>
+
+                    </h:form>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    </h:body>
+</f:view>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html">
+<h:head>
+    <title>Test déjà passé</title>
+</h:head>
+<h:body>
+
+<h2>Vous avez déjà passé ce test.</h2>
+<p>Votre score : <b>#{testBean.scoreFinal}</b></p>
+
+<h:form>
+    <h:commandButton value="Voir résultat" action="resultat.xhtml?faces-redirect=true" />
+    <h:commandButton value="Logout" action="#{loginBean.logout}" />
+</h:form>
+
+</h:body>
+</html>

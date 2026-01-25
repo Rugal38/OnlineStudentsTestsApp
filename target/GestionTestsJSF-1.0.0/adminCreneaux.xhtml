@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core">
+
+<h:head>
+    <title>Gestion des Créneaux</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+    <style>
+        .page-card { border-radius: 16px; }
+        .table thead th { white-space: nowrap; }
+    </style>
+</h:head>
+
+<h:body class="bg-light">
+
+<div class="container py-4" style="max-width: 1200px;">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <h2 class="mb-1">🗓️ Gestion des Créneaux</h2>
+            <div class="text-muted">Créer, modifier et supprimer des créneaux.</div>
+        </div>
+
+        <h:link value="← Retour Dashboard"
+                outcome="adminDashboard.xhtml"
+                styleClass="btn btn-outline-secondary"/>
+    </div>
+
+    <div class="card shadow-sm page-card">
+        <div class="card-body p-4">
+
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <h3 class="m-0">Liste des créneaux</h3>
+
+                <h:form>
+                    <h:commandButton value="➕ Ajouter Créneau"
+                                     action="#{adminCreneauBean.goAdd}"
+                                     styleClass="btn btn-primary"/>
+                </h:form>
+            </div>
+
+            <!-- Table -->
+            <h:form>
+                <div class="table-responsive">
+                    <h:dataTable value="#{adminCreneauBean.creneaux}" var="c"
+                                 styleClass="table table-striped table-bordered align-middle">
+
+                        <h:column>
+                            <f:facet name="header">ID</f:facet>
+                            #{c.id}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Date</f:facet>
+                            #{c.dateExam}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Début</f:facet>
+                            #{c.heureDebut}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Fin (auto)</f:facet>
+                            #{c.heureFin}
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Test ID</f:facet>
+                            <span class="badge text-bg-secondary">#{c.testId}</span>
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Disponible</f:facet>
+                            <span class="badge #{c.disponible ? 'text-bg-success' : 'text-bg-secondary'}">
+                                #{c.disponible ? 'Oui' : 'Non'}
+                            </span>
+                        </h:column>
+
+                        <h:column>
+                            <f:facet name="header">Actions</f:facet>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <!-- EDIT -->
+                                <h:commandButton value="Edit"
+                                                 action="#{adminCreneauBean.loadForEdit(c.id)}"
+                                                 styleClass="btn btn-sm btn-outline-primary"/>
+
+                                <!-- DELETE -->
+                                <h:commandButton value="Delete"
+                                                 action="#{adminCreneauBean.delete(c.id)}"
+                                                 onclick="return confirm('Supprimer ce créneau ?');"
+                                                 styleClass="btn btn-sm btn-outline-danger"/>
+                            </div>
+
+                        </h:column>
+
+                    </h:dataTable>
+                </div>
+            </h:form>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</h:body>
+</html>
