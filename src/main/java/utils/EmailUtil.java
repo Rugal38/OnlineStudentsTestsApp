@@ -10,8 +10,8 @@ public class EmailUtil {
 
     //private static final String FROM_EMAIL = "hanae.arfa.2000@gmail.com";
     //private static final String APP_PASSWORD = "tfywwogzsykvxfvb";
-    private static final String FROM_EMAIL = System.getenv("MAIL_USER");
-    private static final String APP_PASSWORD = System.getenv("MAIL_PASS");
+    private static final String FROM_EMAIL = System.getenv("hanae.arfa.2000@gmail.com");
+    private static final String APP_PASSWORD = System.getenv("tfywwogzsykvxfvb");
 
     public static boolean sendEmail(String to, String subject, String body) {
         try {

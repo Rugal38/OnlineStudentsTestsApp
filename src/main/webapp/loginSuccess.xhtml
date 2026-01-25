@@ -114,12 +114,21 @@
                     <div class="d-flex flex-wrap gap-2">
 
                         <!-- Démarrer -->
-                        <h:form>
-                            <h:commandButton value="▶ Démarrer le test"
-                                             action="#{loginBean.demarrerTest}"
-                                             disabled="#{not loginBean.startEnabled}"
-                                             styleClass="btn btn-primary btn-lg"/>
-                        </h:form>
+                        <h:panelGroup rendered="#{not loginBean.showTestPassedMessage}">
+                            <h:form>
+                                <h:commandButton value="▶ Démarrer le test"
+                                                 action="#{loginBean.demarrerTest}"
+                                                 disabled="#{not loginBean.startEnabled}"
+                                                 styleClass="btn btn-primary btn-lg"/>
+                            </h:form>
+                        </h:panelGroup>
+
+                        <!-- Message si test déjà passé / max tentatives atteintes -->
+                        <h:panelGroup rendered="#{loginBean.showTestPassedMessage}">
+                            <div class="alert alert-success mt-2">
+                                <h:outputText value="#{loginBean.testPassedMessage}" escape="false"/>
+                            </div>
+                        </h:panelGroup>
 
                         <!-- Si créneau passé => proposer un autre -->
                         <h:panelGroup rendered="#{not empty loginBean.message and loginBean.message.contains('Créneau passé')}">
@@ -130,7 +139,7 @@
 
                     </div>
 
-                    <h:panelGroup rendered="#{not loginBean.startEnabled}">
+                    <h:panelGroup rendered="#{not loginBean.startEnabled and not loginBean.showTestPassedMessage}">
                         <div class="form-text mt-2">
                             Le bouton sera activé uniquement lorsque vous serez dans l’intervalle du créneau.
                         </div>

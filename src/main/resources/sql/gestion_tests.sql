@@ -384,11 +384,12 @@ CREATE TABLE test_settings (
   seuil_reussite INT NOT NULL DEFAULT 50,   -- (%)
   afficher_resultat_fin TINYINT(1) NOT NULL DEFAULT 1,
   afficher_correction   TINYINT(1) NOT NULL DEFAULT 0,
-  max_tentatives INT NOT NULL DEFAULT 1
+  max_tentatives INT NOT NULL DEFAULT 1,
+  duree INT NOT NULL DEFAULT 20 -- en minutes
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO test_settings
 (id, nb_questions, shuffle_questions, shuffle_reponses, score_par_question, seuil_reussite,
- afficher_resultat_fin, afficher_correction, max_tentatives)
+ afficher_resultat_fin, afficher_correction, max_tentatives, duree)
 VALUES
-(1, 10, 1, 1, 1, 50, 1, 0, 1);
+(1, 10, 1, 1, 1, 50, 1, 0, 1, 20);

@@ -4,6 +4,7 @@ import dao.CreneauDAO;
 import dao.QuestionDAO;
 import dao.ReponseDAO;
 import dao.ResultatDAO;
+import dao.SettingsDAO;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
@@ -12,6 +13,7 @@ import model.Candidat;
 import model.Creneau;
 import model.Question;
 import model.Reponse;
+import model.TestSettings;
 import utils.EmailUtil;
 
 import java.io.Serializable;
@@ -24,7 +26,7 @@ public class TestBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static final int QUESTIONS_PER_TEST = 10;
+    private TestSettings settings;
 
     private int testId;
     private int candidatId;
@@ -37,6 +39,9 @@ public class TestBean implements Serializable {
     private List<Integer> selectedReponses; // multiple
 
     private int scoreFinal = 0;
+    private int scoreFinalPourcentage = 0;
+    private boolean testReussi = false;
+
     private int numeroQuestion = 0;
     private int totalQuestions = 0;
     private Timestamp lastDatePassage;
@@ -44,6 +49,10 @@ public class TestBean implements Serializable {
     @PostConstruct
     public void init() {
         selectedReponses = new ArrayList<>();
+        settings = SettingsDAO.get(); // Charger les paramètres au démarrage
+        if (settings == null) {
+            settings = new TestSettings(); // Fallback avec valeurs par défaut
+        }
     }
 
     public String startTest() {
@@ -65,7 +74,13 @@ public class TestBean implements Serializable {
 
         testId = cr.getTestId();
 
-        loadRandomQuestionsBalancedByTheme(testId, QUESTIONS_PER_TEST);
+        // Check max tentatives
+        int attempts = ResultatDAO.countAttempts(candidatId, testId);
+        if (settings.getMaxTentatives() > 0 && attempts >= settings.getMaxTentatives()) {
+            return "dejaPasse.xhtml?faces-redirect=true";
+        }
+
+        loadRandomQuestionsBalancedByTheme(testId, settings.getNbQuestions());
 
         totalQuestions = (questions != null) ? questions.size() : 0;
 
@@ -107,6 +122,14 @@ public class TestBean implements Serializable {
             ResultatDAO.insert(scoreFinal, candidatId, testId);
             lastDatePassage = ResultatDAO.findLastDate(candidatId, testId);
 
+            int maxScorePossible = totalQuestions * settings.getScoreParQuestion();
+            if (maxScorePossible > 0) {
+                scoreFinalPourcentage = (int) Math.round(((double) scoreFinal / maxScorePossible) * 100);
+            } else {
+                scoreFinalPourcentage = 0;
+            }
+            testReussi = scoreFinalPourcentage >= settings.getSeuilReussite();
+
             try {
                 FacesContext fc = FacesContext.getCurrentInstance();
                 Candidat candidat = (Candidat) fc.getExternalContext().getSessionMap().get("candidatConnecte");
@@ -115,10 +138,11 @@ public class TestBean implements Serializable {
                     String subject = "Résultat du test";
                     String body =
                             "Bonjour " + candidat.getNom() + " " + candidat.getPrenom() + "\n\n" +
-                            "Votre test est terminé ✅\n" +
-                            "Score : " + scoreFinal + "\n" +
-                            "Date passage : " + (lastDatePassage != null ? lastDatePassage.toString().replace(".0","") : "") + "\n\n" +
-                            "Bon courage.";
+                                    "Votre test est terminé ✅\n" +
+                                    "Score : " + scoreFinal + "/" + maxScorePossible + " (" + scoreFinalPourcentage + " %)\n" +
+                                    "Résultat : " + (testReussi ? "Réussi" : "Échoué") + "\n" +
+                                    "Date passage : " + (lastDatePassage != null ? lastDatePassage.toString().replace(".0","") : "") + "\n\n" +
+                                    "Bon courage.";
 
                     EmailUtil.sendEmail(candidat.getEmail(), subject, body);
                 }
@@ -142,6 +166,9 @@ public class TestBean implements Serializable {
         for (Question q : all) {
             try {
                 List<Reponse> reps = ReponseDAO.findByQuestionId(q.getId());
+                if (settings.isShuffleReponses()) {
+                    Collections.shuffle(reps, new Random());
+                }
                 q.setReponses(reps);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -154,6 +181,10 @@ public class TestBean implements Serializable {
             return;
         }
 
+        if (settings.isShuffleQuestions()) {
+            Collections.shuffle(all, new Random());
+        }
+
         Map<String, List<Question>> byTheme = new LinkedHashMap<>();
         for (Question q : all) {
             String theme = (q.getTheme() == null || q.getTheme().trim().isEmpty()) ? "DEFAULT" : q.getTheme().trim();
@@ -162,7 +193,9 @@ public class TestBean implements Serializable {
 
         Random rnd = new Random();
         for (List<Question> list : byTheme.values()) {
-            Collections.shuffle(list, rnd);
+            if (settings.isShuffleQuestions()) {
+                Collections.shuffle(list, rnd);
+            }
         }
 
         List<Question> picked = new ArrayList<>();
@@ -180,50 +213,59 @@ public class TestBean implements Serializable {
             }
         } while (added && picked.size() < target);
 
-        Collections.shuffle(picked, rnd);
+        if (settings.isShuffleQuestions()) {
+            Collections.shuffle(picked, rnd);
+        }
         questions = picked;
     }
 
- // ==========================
- // SCORING
- // ==========================
- private void checkAndAddScore() {
-     if (currentQuestion == null) return;
+    // ==========================
+    // SCORING
+    // ==========================
+    private void checkAndAddScore() {
+        if (currentQuestion == null) return;
 
-     List<Reponse> reps = currentQuestion.getReponses();
-     if (reps == null || reps.isEmpty()) return;
+        List<Reponse> reps = currentQuestion.getReponses();
+        if (reps == null || reps.isEmpty()) return;
 
-     String type = (currentQuestion.getType() == null) ? "" : currentQuestion.getType().trim();
+        String type = (currentQuestion.getType() == null) ? "" : currentQuestion.getType().trim();
+        boolean correct = false;
 
-     if ("single".equalsIgnoreCase(type)) {
-         if (selectedReponseId == null) return;
+        if ("single".equalsIgnoreCase(type)) {
+            if (selectedReponseId == null) return;
 
-         for (Reponse r : reps) {
-             if (Objects.equals(r.getId(), selectedReponseId) && r.isCorrecte()) {
-                 scoreFinal++;
-                 break;
-             }
-         }
+            for (Reponse r : reps) {
+                if (Objects.equals(r.getId(), selectedReponseId) && r.isCorrecte()) {
+                    correct = true;
+                    break;
+                }
+            }
 
-     } else if ("multiple".equalsIgnoreCase(type)) {
-         if (selectedReponses == null) selectedReponses = new ArrayList<>();
+        } else if ("multiple".equalsIgnoreCase(type)) {
+            if (selectedReponses == null) selectedReponses = new ArrayList<>();
 
-         Set<Integer> correct = new HashSet<>();
-         for (Reponse r : reps) {
-             if (r.isCorrecte()) correct.add(r.getId());
-         }
+            Set<Integer> correctReponses = new HashSet<>();
+            for (Reponse r : reps) {
+                if (r.isCorrecte()) correctReponses.add(r.getId());
+            }
 
-         Set<Integer> sel = new HashSet<>(selectedReponses);
+            Set<Integer> selectedIds = new HashSet<>(selectedReponses);
 
-         if (!correct.isEmpty() && sel.equals(correct)) {
-             scoreFinal++;
-         }
-     }
- }
+            if (!correctReponses.isEmpty() && selectedIds.equals(correctReponses)) {
+                correct = true;
+            }
+        }
+
+        if (correct) {
+            scoreFinal += settings.getScoreParQuestion();
+        }
+    }
 
 
     private void resetState() {
         scoreFinal = 0;
+        scoreFinalPourcentage = 0;
+        testReussi = false;
         index = 0;
         numeroQuestion = 0;
         totalQuestions = 0;
@@ -238,9 +280,18 @@ public class TestBean implements Serializable {
         selectedReponses = new ArrayList<>();
     }
 
-    private void setCurrentQuestion(Question q) {
-        currentQuestion = q;
+private void setCurrentQuestion(Question q) {
+    currentQuestion = q;
+    
+    // Check if responses need shuffling for this specific question
+    if (settings != null && settings.isShuffleReponses()) {
+        List<Reponse> responses = q.getReponses();
+        if (responses != null) {
+            Collections.shuffle(responses, new Random());
+        }
     }
+}
+
 
     public Question getCurrentQuestion() { return currentQuestion; }
 
@@ -256,4 +307,9 @@ public class TestBean implements Serializable {
 
     public Timestamp getLastDatePassage() { return lastDatePassage; }
     public void setLastDatePassage(Timestamp lastDatePassage) { this.lastDatePassage = lastDatePassage; }
+
+    public TestSettings getSettings() { return settings; }
+    public int getScoreFinalPourcentage() { return scoreFinalPourcentage; }
+    public boolean isTestReussi() { return testReussi; }
 }
+

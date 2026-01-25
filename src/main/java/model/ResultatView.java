@@ -13,6 +13,7 @@ public class ResultatView {
     private String codeSession;
 
     private String testTitre;
+    private int totalQuestions;
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -37,4 +38,7 @@ public class ResultatView {
 
     public String getTestTitre() { return testTitre; }
     public void setTestTitre(String testTitre) { this.testTitre = testTitre; }
+
+    public int getTotalQuestions() { return totalQuestions; }
+    public void setTotalQuestions(int totalQuestions) { this.totalQuestions = totalQuestions; }
 }

@@ -6,7 +6,9 @@ import utils.DBConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DashboardDAO {
 
@@ -122,5 +124,36 @@ public class DashboardDAO {
         }
 
         return list;
+    }
+    
+    public static Map<String, Integer> countResultsLast7Days() {
+        Map<String, Integer> results = new LinkedHashMap<>();
+        String sql = "SELECT DATE(date_passage) as passage_day, COUNT(*) as count " +
+                     "FROM resultat " +
+                     "WHERE date_passage >= CURDATE() - INTERVAL 6 DAY " +
+                     "GROUP BY passage_day " +
+                     "ORDER BY passage_day ASC";
+
+        // Initialize map with last 7 days
+        for (int i = 6; i >= 0; i--) {
+            java.time.LocalDate date = java.time.LocalDate.now().minusDays(i);
+            results.put(date.toString(), 0);
+        }
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                String day = rs.getDate("passage_day").toString();
+                int count = rs.getInt("count");
+                results.put(day, count);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return results;
     }
 }

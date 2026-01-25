@@ -2,12 +2,15 @@ package controller;
 
 import dao.CandidatDAO;
 import dao.CreneauDAO;
+import dao.ResultatDAO;
+import dao.SettingsDAO;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import model.Candidat;
 import model.Creneau;
+import model.TestSettings;
 
 import java.io.Serializable;
 
@@ -24,6 +27,9 @@ public class LoginBean implements Serializable {
     private String message;
     private boolean startEnabled;
 
+    private String testPassedMessage; // New field for passed test message
+    private boolean showTestPassedMessage; // New field to control message visibility
+
     @Inject
     private TestBean testBean;
 
@@ -32,6 +38,8 @@ public class LoginBean implements Serializable {
         startEnabled = false;
         candidat = null;
         creneau = null;
+        testPassedMessage = null;
+        showTestPassedMessage = false;
 
         if (codeSession == null || codeSession.trim().isEmpty()) {
             message = "Veuillez saisir votre code session.";
@@ -79,6 +87,45 @@ public class LoginBean implements Serializable {
         // ✅ CAS C : actuellement dans le créneau
         message = "✅ Vous pouvez démarrer maintenant.";
         startEnabled = true;
+
+        // --- Check for test attempts and success ---
+        TestSettings testSettings = SettingsDAO.get();
+        if (testSettings != null && creneau.getTestId() != null) {
+            int attempts = ResultatDAO.countAttempts(candidat.getId(), creneau.getTestId());
+
+            if (testSettings.getMaxTentatives() > 0 && attempts >= testSettings.getMaxTentatives()) {
+                showTestPassedMessage = true;
+                startEnabled = false; // Disable start button
+
+                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), creneau.getTestId());
+                if (lastScore != null) {
+                    int maxScorePossible = testSettings.getNbQuestions() * testSettings.getScoreParQuestion();
+                    int scorePercentage = (maxScorePossible > 0) ? (int) Math.round(((double) lastScore / maxScorePossible) * 100) : 0;
+
+                    if (scorePercentage >= testSettings.getSeuilReussite()) {
+                        testPassedMessage = "✅ Vous avez déjà réussi ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                    } else {
+                        testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + testSettings.getMaxTentatives() + ") pour ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                    }
+                } else {
+                    testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + testSettings.getMaxTentatives() + ") pour ce test.";
+                }
+            } else if (attempts > 0) { // If attempts made but not maxed, check last result
+                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), creneau.getTestId());
+                if (lastScore != null) {
+                    int maxScorePossible = testSettings.getNbQuestions() * testSettings.getScoreParQuestion();
+                    int scorePercentage = (maxScorePossible > 0) ? (int) Math.round(((double) lastScore / maxScorePossible) * 100) : 0;
+
+                    if (scorePercentage >= testSettings.getSeuilReussite()) {
+                        testPassedMessage = "✅ Vous avez déjà réussi ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                        showTestPassedMessage = true;
+                        startEnabled = false; // Disable start button if already passed
+                    }
+                }
+            }
+        }
+        // --- End check ---
+
         return "loginSuccess.xhtml?faces-redirect=true";
     }
 
@@ -99,6 +146,8 @@ public class LoginBean implements Serializable {
             creneau = null;
             message = null;
             startEnabled = false;
+            testPassedMessage = null;
+            showTestPassedMessage = false;
             return;
         }
 
@@ -107,6 +156,8 @@ public class LoginBean implements Serializable {
             creneau = null;
             message = null;
             startEnabled = false;
+            testPassedMessage = null;
+            showTestPassedMessage = false;
             return;
         }
 
@@ -121,6 +172,8 @@ public class LoginBean implements Serializable {
         if (creneau == null) {
             message = "Vous n'avez pas encore choisi un créneau.";
             startEnabled = false;
+            testPassedMessage = null;
+            showTestPassedMessage = false;
             return;
         }
 
@@ -128,17 +181,59 @@ public class LoginBean implements Serializable {
         if (CreneauDAO.isAfterCreneau(creneau)) {
             message = "⛔ Créneau passé… Veuillez choisir un autre créneau.";
             startEnabled = false;
+            testPassedMessage = null;
+            showTestPassedMessage = false;
             return;
         }
 
         if (CreneauDAO.isBeforeCreneau(creneau)) {
             message = "⏳ Veuillez attendre l'heure de votre créneau.";
             startEnabled = false;
+            testPassedMessage = null;
+            showTestPassedMessage = false;
             return;
         }
 
         message = "✅ Vous pouvez démarrer maintenant.";
         startEnabled = true;
+
+        // --- Check for test attempts and success (same logic as login) ---
+        TestSettings testSettings = SettingsDAO.get();
+        if (testSettings != null && creneau.getTestId() != null) {
+            int attempts = ResultatDAO.countAttempts(candidat.getId(), creneau.getTestId());
+
+            if (testSettings.getMaxTentatives() > 0 && attempts >= testSettings.getMaxTentatives()) {
+                showTestPassedMessage = true;
+                startEnabled = false; // Disable start button
+
+                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), creneau.getTestId());
+                if (lastScore != null) {
+                    int maxScorePossible = testSettings.getNbQuestions() * testSettings.getScoreParQuestion();
+                    int scorePercentage = (maxScorePossible > 0) ? (int) Math.round(((double) lastScore / maxScorePossible) * 100) : 0;
+
+                    if (scorePercentage >= testSettings.getSeuilReussite()) {
+                        testPassedMessage = "✅ Vous avez déjà réussi ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                    } else {
+                        testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + testSettings.getMaxTentatives() + ") pour ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                    }
+                } else {
+                    testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + testSettings.getMaxTentatives() + ") pour ce test.";
+                }
+            } else if (attempts > 0) { // If attempts made but not maxed, check last result
+                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), creneau.getTestId());
+                if (lastScore != null) {
+                    int maxScorePossible = testSettings.getNbQuestions() * testSettings.getScoreParQuestion();
+                    int scorePercentage = (maxScorePossible > 0) ? (int) Math.round(((double) lastScore / maxScorePossible) * 100) : 0;
+
+                    if (scorePercentage >= testSettings.getSeuilReussite()) {
+                        testPassedMessage = "✅ Vous avez déjà réussi ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                        showTestPassedMessage = true;
+                        startEnabled = false; // Disable start button if already passed
+                    }
+                }
+            }
+        }
+        // --- End check ---
     }
 
     public String goInscription() {
@@ -157,6 +252,8 @@ public class LoginBean implements Serializable {
         creneau = null;
         message = null;
         startEnabled = false;
+        testPassedMessage = null;
+        showTestPassedMessage = false;
     }
 
     // Getters / Setters
@@ -169,4 +266,7 @@ public class LoginBean implements Serializable {
     public String getMessage() { return message; }
 
     public boolean isStartEnabled() { return startEnabled; }
+
+    public String getTestPassedMessage() { return testPassedMessage; }
+    public boolean isShowTestPassedMessage() { return showTestPassedMessage; }
 }

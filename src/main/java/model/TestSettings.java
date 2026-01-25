@@ -15,6 +15,7 @@ public class TestSettings implements Serializable {
     private boolean afficherResultatFin;
     private boolean afficherCorrection;
     private int maxTentatives;
+    private int duree; // en minutes, 0 = pas de limite
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -42,4 +43,7 @@ public class TestSettings implements Serializable {
 
     public int getMaxTentatives() { return maxTentatives; }
     public void setMaxTentatives(int maxTentatives) { this.maxTentatives = maxTentatives; }
+    
+    public int getDuree() { return duree; }
+    public void setDuree(int duree) { this.duree = duree; }
 }

@@ -2,6 +2,9 @@
 <f:view xmlns="http://www.w3.org/1999/xhtml"
         xmlns:h="jakarta.faces.html"
         xmlns:f="jakarta.faces.core">
+    <f:metadata>
+        <f:viewAction action="#{adminTestSettingsBean.load}" />
+    </f:metadata>
 
     <h:head>
         <title>Paramètres Test (Global)</title>
@@ -15,10 +18,6 @@
     </h:head>
 
     <h:body class="bg-light">
-
-        <f:metadata>
-            <f:viewAction action="#{adminTestSettingsBean.load}" />
-        </f:metadata>
 
         <div class="container py-4" style="max-width: 900px;">
 
@@ -78,6 +77,15 @@
                             <div class="col-12 col-md-6">
                                 <label class="form-label">Max tentatives</label>
                                 <h:inputText value="#{adminTestSettingsBean.settings.maxTentatives}"
+                                             required="true"
+                                             styleClass="form-control">
+                                    <f:convertNumber integerOnly="true" />
+                                </h:inputText>
+                            </div>
+                            
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Durée par question (minutes)<br/><small>(0 = pas de limite)</small></label>
+                                <h:inputText value="#{adminTestSettingsBean.settings.duree}"
                                              required="true"
                                              styleClass="form-control">
                                     <f:convertNumber integerOnly="true" />

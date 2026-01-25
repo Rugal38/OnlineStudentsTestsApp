@@ -11,11 +11,18 @@
 
     <script type="text/javascript">
         //<![CDATA[
-        var timeLeft = 120;
+        var timeLeft = 120; // Default value, will be overridden
         var intervalId = null;
 
         function startTimer() {
-            timeLeft = 120;
+            // Read duration from bean, convert minutes to seconds
+            var dureeMinutes = #{testBean.settings.duree};
+            if (dureeMinutes > 0) {
+                timeLeft = dureeMinutes * 60;
+            } else {
+                timeLeft = 999999; // Essentially infinite
+            }
+
             var timer = document.getElementById("timer");
             var hiddenBtn = document.getElementById("formTest:autoBtn");
 
@@ -25,11 +32,12 @@
 
             intervalId = setInterval(function() {
                 timeLeft--;
-                timer.innerHTML = "Temps restant : " + timeLeft + " sec";
+                if (timer) {
+                    timer.innerHTML = "Temps restant : " + timeLeft + " sec";
+                }
 
-                if (timeLeft <= 0) {
+                if (dureeMinutes > 0 && timeLeft <= 0) {
                     clearInterval(intervalId);
-                    // auto next
                     if (hiddenBtn) hiddenBtn.click();
                 }
             }, 1000);
@@ -45,7 +53,7 @@
     </style>
 </h:head>
 
-<h:body onload="startTimer()" class="bg-light">
+<h:body onload="if(#{testBean.settings.duree > 0}) startTimer();" class="bg-light">
 
 <div class="container py-4">
 
@@ -58,9 +66,11 @@
             </div>
         </div>
 
-        <div class="badge text-bg-danger timer-badge" id="timer">
-            Temps restant : 120 sec
-        </div>
+        <h:panelGroup rendered="#{testBean.settings.duree > 0}">
+             <div class="badge text-bg-danger timer-badge" id="timer">
+                Temps restant : #{testBean.settings.duree * 60} sec
+            </div>
+        </h:panelGroup>
     </div>
 
     <!-- If question exists -->

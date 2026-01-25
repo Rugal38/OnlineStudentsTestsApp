@@ -40,6 +40,7 @@ public class AdminTestSettingsBean implements Serializable {
             settings.setAfficherResultatFin(true);
             settings.setAfficherCorrection(false);
             settings.setMaxTentatives(1);
+            settings.setDuree(20); // Default duration in minutes
 
             message = "⚠️ Les paramètres (id = 1) n'existent pas dans la base de données. Veuillez faire un INSERT SQL.";
             success = false;
@@ -65,6 +66,10 @@ public class AdminTestSettingsBean implements Serializable {
         }
         if (settings.getMaxTentatives() <= 0) {
             message = "❌ Le nombre maximum de tentatives doit être supérieur ou égal à 1.";
+            return null;
+        }
+        if (settings.getDuree() < 0) {
+            message = "❌ La durée du test ne peut pas être négative.";
             return null;
         }
 

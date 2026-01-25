@@ -74,6 +74,27 @@ public class ResultatDAO {
         }
         return null;
     }
+    
+    public static int countAttempts(int candidatId, int testId) {
+        String sql = "SELECT COUNT(*) FROM resultat WHERE candidat_id = ? AND test_id = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, candidatId);
+            ps.setInt(2, testId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
 
     // ✅ Liste des résultats pour l'affichage (vue avec jointures)
     public static List<model.ResultatView> findAllView() {
@@ -82,10 +103,12 @@ public class ResultatDAO {
         String sql =
                 "SELECT r.id, r.score, r.date_passage, " +
                 "       c.nom, c.prenom, c.email, c.code_session, " +
-                "       t.titre AS test_titre " +
+                "       t.titre AS test_titre, " +
+                "       ts.nb_questions AS total_questions " + // Assuming nb_questions is in test_settings
                 "FROM resultat r " +
                 "LEFT JOIN candidat c ON r.candidat_id = c.id " +
                 "LEFT JOIN test t ON r.test_id = t.id " +
+                "LEFT JOIN test_settings ts ON ts.id = 1 " + // Assuming global settings for total questions
                 "ORDER BY r.date_passage DESC";
 
         try (Connection con = DBConnection.getConnection();
@@ -102,6 +125,7 @@ public class ResultatDAO {
                 v.setEmail(rs.getString("email"));
                 v.setCodeSession(rs.getString("code_session"));
                 v.setTestTitre(rs.getString("test_titre"));
+                v.setTotalQuestions(rs.getInt("total_questions"));
                 list.add(v);
             }
 
