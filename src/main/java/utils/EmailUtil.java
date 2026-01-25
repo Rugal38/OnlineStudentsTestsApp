@@ -1,6 +1,6 @@
 package utils;
 
-import jakarta.mail.*;
+import jakarta.mail.*;		
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 
@@ -8,10 +8,9 @@ import java.util.Properties;
 
 public class EmailUtil {
 
-    //private static final String FROM_EMAIL = "hanae.arfa.2000@gmail.com";
-    //private static final String APP_PASSWORD = "tfywwogzsykvxfvb";
-    private static final String FROM_EMAIL = System.getenv("hanae.arfa.2000@gmail.com");
-    private static final String APP_PASSWORD = System.getenv("tfywwogzsykvxfvb");
+
+    private static final String FROM_EMAIL = System.getenv("MAIL_NAME");
+    private static final String APP_PASSWORD = System.getenv("MAIL_PASS");
 
     public static boolean sendEmail(String to, String subject, String body) {
         try {

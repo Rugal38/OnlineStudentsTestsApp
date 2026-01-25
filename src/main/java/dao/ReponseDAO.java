@@ -1,6 +1,6 @@
 package dao;
 
-import model.Reponse;
+import model.Reponse;	
 import utils.DBConnection;
 
 import java.sql.*;

@@ -1,15 +1,27 @@
 package dao;
 
-import model.Creneau;
-import utils.DBConnection;
 
-import java.sql.*;
+import java.sql.Connection;		
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Time;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+
+
+import model.Creneau;
+
+import dao.TestDAO;
+
+import utils.DBConnection;
+
+
 
 public class CreneauDAO {
 
@@ -188,32 +200,17 @@ public class CreneauDAO {
     public static String computeHeureFin(Integer testId, String heureDebutStr) {
         if (testId == null || heureDebutStr == null || heureDebutStr.trim().isEmpty()) return null;
 
-        Integer dureeMin = getTestDureeMinutes(testId);
-        if (dureeMin == null) return null;
+        // --- Use TestDAO to get test duration ---
+        model.Test test = TestDAO.findById(testId);
+        if (test == null || test.getDuree() == null) return null; // Test not found or duration not set
+
+        Integer dureeMin = test.getDuree();
+        if (dureeMin == null) return null; 
 
         LocalTime start = parseTime(heureDebutStr);
         LocalTime fin = start.plusMinutes(dureeMin);
 
         return fin.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-    }
-
-    public static Integer getTestDureeMinutes(int testId) {
-        String sql = "SELECT duree FROM test WHERE id=?";
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, testId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    int d = rs.getInt("duree");
-                    return rs.wasNull() ? null : d;
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     // ========= HELPERS =========

@@ -1,6 +1,6 @@
 package dao;
 
-import utils.DBConnection;
+import utils.DBConnection;	
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -104,11 +104,10 @@ public class ResultatDAO {
                 "SELECT r.id, r.score, r.date_passage, " +
                 "       c.nom, c.prenom, c.email, c.code_session, " +
                 "       t.titre AS test_titre, " +
-                "       ts.nb_questions AS total_questions " + // Assuming nb_questions is in test_settings
+                "       t.nb_questions AS total_questions " + // Now nb_questions is directly in the 'test' table
                 "FROM resultat r " +
                 "LEFT JOIN candidat c ON r.candidat_id = c.id " +
                 "LEFT JOIN test t ON r.test_id = t.id " +
-                "LEFT JOIN test_settings ts ON ts.id = 1 " + // Assuming global settings for total questions
                 "ORDER BY r.date_passage DESC";
 
         try (Connection con = DBConnection.getConnection();

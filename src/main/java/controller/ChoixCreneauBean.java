@@ -1,6 +1,6 @@
 package controller;
 
-import dao.CandidatDAO;
+import dao.CandidatDAO;	
 import dao.CreneauDAO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.faces.context.FacesContext;

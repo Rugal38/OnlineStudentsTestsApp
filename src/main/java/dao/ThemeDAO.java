@@ -1,6 +1,6 @@
 package dao;
 
-import model.Theme;
+import model.Theme;	
 import utils.DBConnection;
 
 import java.sql.Connection;

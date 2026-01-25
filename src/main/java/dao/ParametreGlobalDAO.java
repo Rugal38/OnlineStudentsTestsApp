@@ -1,6 +1,6 @@
 package dao;
 
-import model.ParametreGlobal;
+import model.ParametreGlobal;	
 import utils.DBConnection;
 
 import java.sql.Connection;

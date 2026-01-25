@@ -22,16 +22,16 @@
     <div class="text-center mb-4">
         <h1 class="mb-1">Résultat du test</h1>
         <div class="text-muted">
-            <h:panelGroup rendered="#{testBean.settings.afficherResultatFin}">
+            <h:panelGroup rendered="#{testBean.currentTest.afficherResultatFin}">
                 Voici votre résultat final.
             </h:panelGroup>
-            <h:panelGroup rendered="#{!testBean.settings.afficherResultatFin}">
+            <h:panelGroup rendered="#{!testBean.currentTest.afficherResultatFin}">
                 Le résultat pour ce test n'est pas affiché.
             </h:panelGroup>
         </div>
     </div>
 
-    <h:panelGroup layout="block" rendered="#{testBean.settings.afficherResultatFin}">
+    <h:panelGroup layout="block" rendered="#{testBean.currentTest.afficherResultatFin}">
         <div class="card shadow-sm page-card">
             <div class="card-body p-4">
 
@@ -39,7 +39,7 @@
                     <div>
                         <div class="text-muted">Votre résultat</div>
                         <div class="display-6 fw-semibold score-percent">#{testBean.scoreFinalPourcentage}%</div>
-                        <div class="small text-muted">(#{testBean.scoreFinal} / #{testBean.totalQuestions * testBean.settings.scoreParQuestion})</div>
+                        <div class="small text-muted">(#{testBean.scoreFinal} / #{testBean.totalQuestions * testBean.currentTest.scoreParQuestion})</div>
                     </div>
                     <div>
                         <h:panelGroup rendered="#{testBean.testReussi}">
@@ -63,13 +63,15 @@
                         </div>
                         <div class="col-md-6">
                             <div class="text-muted mb-1">Seuil de réussite</div>
-                            <div class="fw-semibold">#{testBean.settings.seuilReussite}%</div>
+                            <div class="fw-semibold">#{testBean.currentTest.seuilReussite}%</div>
                         </div>
                     </div>
                 </div>
 
-                <h:panelGroup layout="block" rendered="#{testBean.settings.afficherCorrection}" class="text-center mt-3">
-                    <a href="#">Voir la correction</a>
+                <h:panelGroup layout="block" rendered="#{testBean.currentTest.afficherCorrection}" class="text-center mt-3">
+                    <h:form>
+                        <h:commandLink value="Voir la correction" action="#{testBean.viewCorrection}" styleClass="btn btn-info"/>
+                    </h:form>
                 </h:panelGroup>
 
                 <hr class="my-4"/>
@@ -86,7 +88,7 @@
         </div>
     </h:panelGroup>
     
-    <h:panelGroup layout="block" rendered="#{!testBean.settings.afficherResultatFin}">
+    <h:panelGroup layout="block" rendered="#{!testBean.currentTest.afficherResultatFin}">
         <div class="card shadow-sm page-card">
             <div class="card-body p-4 text-center">
                  <p>Conformément aux paramètres du test, les résultats détaillés ne sont pas affichés.</p>

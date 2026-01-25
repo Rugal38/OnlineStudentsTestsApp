@@ -1,6 +1,6 @@
 package dao;
 
-import model.AdminUser;
+import model.AdminUser;	
 import utils.DBConnection;
 
 import java.sql.Connection;

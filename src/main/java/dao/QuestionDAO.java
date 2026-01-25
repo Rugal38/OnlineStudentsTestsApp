@@ -1,6 +1,6 @@
 package dao;
 
-import model.Question;
+import model.Question;	
 import utils.DBConnection;
 
 import java.sql.*;

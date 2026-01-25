@@ -1,6 +1,6 @@
 package dao;
 
-import model.Candidat;
+import model.Candidat;	
 import utils.DBConnection;
 
 import java.sql.*;

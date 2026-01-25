@@ -1,10 +1,10 @@
 package controller;
 
-import dao.CreneauDAO;
+import dao.CreneauDAO;			
 import dao.QuestionDAO;
 import dao.ReponseDAO;
 import dao.ResultatDAO;
-import dao.SettingsDAO;
+import dao.TestDAO; // Add TestDAO import
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
@@ -13,12 +13,13 @@ import model.Candidat;
 import model.Creneau;
 import model.Question;
 import model.Reponse;
-import model.TestSettings;
+import model.Test; // Add Test model import
 import utils.EmailUtil;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Named("testBean")
 @SessionScoped
@@ -26,7 +27,7 @@ public class TestBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private TestSettings settings;
+    private model.Test currentTest; // Changed from TestSettings settings to Test currentTest
 
     private int testId;
     private int candidatId;
@@ -37,6 +38,8 @@ public class TestBean implements Serializable {
     private Question currentQuestion;
     private Integer selectedReponseId;      // single
     private List<Integer> selectedReponses; // multiple
+
+    private List<CorrectionQuestion> correctionQuestions = new ArrayList<>(); // To store all questions with candidate answers
 
     private int scoreFinal = 0;
     private int scoreFinalPourcentage = 0;
@@ -49,10 +52,7 @@ public class TestBean implements Serializable {
     @PostConstruct
     public void init() {
         selectedReponses = new ArrayList<>();
-        settings = SettingsDAO.get(); // Charger les paramètres au démarrage
-        if (settings == null) {
-            settings = new TestSettings(); // Fallback avec valeurs par défaut
-        }
+        // Removed settings loading logic
     }
 
     public String startTest() {
@@ -74,13 +74,19 @@ public class TestBean implements Serializable {
 
         testId = cr.getTestId();
 
+        currentTest = TestDAO.findById(testId);
+        if (currentTest == null) {
+            // Should not happen if data integrity is maintained
+            return "loginSuccess.xhtml?faces-redirect=true";
+        }
+
         // Check max tentatives
         int attempts = ResultatDAO.countAttempts(candidatId, testId);
-        if (settings.getMaxTentatives() > 0 && attempts >= settings.getMaxTentatives()) {
+        if (currentTest.getMaxTentatives() > 0 && attempts >= currentTest.getMaxTentatives()) {
             return "dejaPasse.xhtml?faces-redirect=true";
         }
 
-        loadRandomQuestionsBalancedByTheme(testId, settings.getNbQuestions());
+        loadRandomQuestionsBalancedByTheme(testId, currentTest.getNbQuestions());
 
         totalQuestions = (questions != null) ? questions.size() : 0;
 
@@ -122,13 +128,13 @@ public class TestBean implements Serializable {
             ResultatDAO.insert(scoreFinal, candidatId, testId);
             lastDatePassage = ResultatDAO.findLastDate(candidatId, testId);
 
-            int maxScorePossible = totalQuestions * settings.getScoreParQuestion();
+            int maxScorePossible = totalQuestions * currentTest.getScoreParQuestion();
             if (maxScorePossible > 0) {
                 scoreFinalPourcentage = (int) Math.round(((double) scoreFinal / maxScorePossible) * 100);
             } else {
                 scoreFinalPourcentage = 0;
             }
-            testReussi = scoreFinalPourcentage >= settings.getSeuilReussite();
+            testReussi = scoreFinalPourcentage >= currentTest.getSeuilReussite();
 
             try {
                 FacesContext fc = FacesContext.getCurrentInstance();
@@ -166,7 +172,7 @@ public class TestBean implements Serializable {
         for (Question q : all) {
             try {
                 List<Reponse> reps = ReponseDAO.findByQuestionId(q.getId());
-                if (settings.isShuffleReponses()) {
+                if (currentTest.isShuffleReponses()) {
                     Collections.shuffle(reps, new Random());
                 }
                 q.setReponses(reps);
@@ -181,7 +187,7 @@ public class TestBean implements Serializable {
             return;
         }
 
-        if (settings.isShuffleQuestions()) {
+        if (currentTest.isShuffleQuestions()) {
             Collections.shuffle(all, new Random());
         }
 
@@ -193,7 +199,7 @@ public class TestBean implements Serializable {
 
         Random rnd = new Random();
         for (List<Question> list : byTheme.values()) {
-            if (settings.isShuffleQuestions()) {
+            if (currentTest.isShuffleQuestions()) {
                 Collections.shuffle(list, rnd);
             }
         }
@@ -213,14 +219,14 @@ public class TestBean implements Serializable {
             }
         } while (added && picked.size() < target);
 
-        if (settings.isShuffleQuestions()) {
+        if (currentTest.isShuffleQuestions()) {
             Collections.shuffle(picked, rnd);
         }
         questions = picked;
     }
 
     // ==========================
-    // SCORING
+    // SCORING AND CORRECTION STORAGE
     // ==========================
     private void checkAndAddScore() {
         if (currentQuestion == null) return;
@@ -231,34 +237,37 @@ public class TestBean implements Serializable {
         String type = (currentQuestion.getType() == null) ? "" : currentQuestion.getType().trim();
         boolean correct = false;
 
-        if ("single".equalsIgnoreCase(type)) {
-            if (selectedReponseId == null) return;
+        List<Integer> selectedIdsForCorrection = new ArrayList<>();
 
-            for (Reponse r : reps) {
-                if (Objects.equals(r.getId(), selectedReponseId) && r.isCorrecte()) {
-                    correct = true;
-                    break;
+        if ("single".equalsIgnoreCase(type)) {
+            if (selectedReponseId != null) {
+                selectedIdsForCorrection.add(selectedReponseId);
+                for (Reponse r : reps) {
+                    if (Objects.equals(r.getId(), selectedReponseId) && r.isCorrecte()) {
+                        correct = true;
+                        break;
+                    }
                 }
             }
-
         } else if ("multiple".equalsIgnoreCase(type)) {
-            if (selectedReponses == null) selectedReponses = new ArrayList<>();
+            if (selectedReponses != null) {
+                selectedIdsForCorrection.addAll(selectedReponses);
+                Set<Integer> correctReponses = reps.stream()
+                                                  .filter(Reponse::isCorrecte)
+                                                  .map(Reponse::getId)
+                                                  .collect(Collectors.toSet());
+                Set<Integer> selectedSet = new HashSet<>(selectedReponses);
 
-            Set<Integer> correctReponses = new HashSet<>();
-            for (Reponse r : reps) {
-                if (r.isCorrecte()) correctReponses.add(r.getId());
-            }
-
-            Set<Integer> selectedIds = new HashSet<>(selectedReponses);
-
-            if (!correctReponses.isEmpty() && selectedIds.equals(correctReponses)) {
-                correct = true;
+                if (!correctReponses.isEmpty() && selectedSet.equals(correctReponses)) {
+                    correct = true;
+                }
             }
         }
 
         if (correct) {
-            scoreFinal += settings.getScoreParQuestion();
+            scoreFinal += currentTest.getScoreParQuestion();
         }
+        correctionQuestions.add(new CorrectionQuestion(currentQuestion, selectedIdsForCorrection, correct));
     }
 
 
@@ -270,6 +279,7 @@ public class TestBean implements Serializable {
         numeroQuestion = 0;
         totalQuestions = 0;
         currentQuestion = null;
+        currentTest = null; // Reset currentTest
         lastDatePassage = null;
         questions = new ArrayList<>();
         clearSelections();
@@ -284,7 +294,7 @@ private void setCurrentQuestion(Question q) {
     currentQuestion = q;
     
     // Check if responses need shuffling for this specific question
-    if (settings != null && settings.isShuffleReponses()) {
+    if (currentTest != null && currentTest.isShuffleReponses()) {
         List<Reponse> responses = q.getReponses();
         if (responses != null) {
             Collections.shuffle(responses, new Random());
@@ -308,8 +318,33 @@ private void setCurrentQuestion(Question q) {
     public Timestamp getLastDatePassage() { return lastDatePassage; }
     public void setLastDatePassage(Timestamp lastDatePassage) { this.lastDatePassage = lastDatePassage; }
 
-    public TestSettings getSettings() { return settings; }
     public int getScoreFinalPourcentage() { return scoreFinalPourcentage; }
     public boolean isTestReussi() { return testReussi; }
+
+    public model.Test getCurrentTest() { return currentTest; }
+
+    public String viewCorrection() {
+        return "correction.xhtml?faces-redirect=true";
+    }
+
+    public List<CorrectionQuestion> getCorrectionQuestions() { return correctionQuestions; }
+
+    // Inner class to hold correction data for each question
+    public static class CorrectionQuestion implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private Question question;
+        private List<Integer> candidateSelectedResponseIds;
+        private boolean correctlyAnswered;
+
+        public CorrectionQuestion(Question question, List<Integer> candidateSelectedResponseIds, boolean correctlyAnswered) {
+            this.question = question;
+            this.candidateSelectedResponseIds = candidateSelectedResponseIds;
+            this.correctlyAnswered = correctlyAnswered;
+        }
+
+        public Question getQuestion() { return question; }
+        public List<Integer> getCandidateSelectedResponseIds() { return candidateSelectedResponseIds; }
+        public boolean isCorrectlyAnswered() { return correctlyAnswered; }
+    }
 }
 

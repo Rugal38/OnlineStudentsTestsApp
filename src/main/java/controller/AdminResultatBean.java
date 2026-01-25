@@ -1,6 +1,6 @@
 package controller;
 
-import dao.ResultatDAO;
+import dao.ResultatDAO;	
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Named;

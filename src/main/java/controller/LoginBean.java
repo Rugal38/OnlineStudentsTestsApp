@@ -1,16 +1,16 @@
 package controller;
 
-import dao.CandidatDAO;
+import dao.CandidatDAO;		
 import dao.CreneauDAO;
 import dao.ResultatDAO;
-import dao.SettingsDAO;
+import dao.TestDAO; // Added TestDAO import
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import model.Candidat;
 import model.Creneau;
-import model.TestSettings;
+import model.Test; // Added Test import
 
 import java.io.Serializable;
 
@@ -23,12 +23,13 @@ public class LoginBean implements Serializable {
 
     private Candidat candidat;
     private Creneau creneau;
+    private model.Test currentTest; // Added currentTest field
 
     private String message;
     private boolean startEnabled;
 
-    private String testPassedMessage; // New field for passed test message
-    private boolean showTestPassedMessage; // New field to control message visibility
+    private String testPassedMessage;
+    private boolean showTestPassedMessage;
 
     @Inject
     private TestBean testBean;
@@ -38,6 +39,7 @@ public class LoginBean implements Serializable {
         startEnabled = false;
         candidat = null;
         creneau = null;
+        currentTest = null; // Initialize currentTest
         testPassedMessage = null;
         showTestPassedMessage = false;
 
@@ -55,7 +57,6 @@ public class LoginBean implements Serializable {
         FacesContext.getCurrentInstance().getExternalContext()
                 .getSessionMap().put("candidatConnecte", candidat);
 
-        // Le candidat n'a pas encore choisi de créneau
         if (candidat.getCreneauId() == null) {
             message = "Vous n'avez pas encore choisi un créneau.";
             startEnabled = false;
@@ -69,55 +70,67 @@ public class LoginBean implements Serializable {
             startEnabled = false;
             return "loginSuccess.xhtml?faces-redirect=true";
         }
+        
+        // Fetch test-specific settings
+        if (creneau.getTestId() != null) {
+            currentTest = TestDAO.findById(creneau.getTestId());
+            if (currentTest == null) {
+                // Should not happen if data integrity is maintained
+                message = "Test introuvable pour ce créneau.";
+                startEnabled = false;
+                return "loginSuccess.xhtml?faces-redirect=true";
+            }
+        } else {
+            message = "Ce créneau n'est associé à aucun test.";
+            startEnabled = false;
+            return "loginSuccess.xhtml?faces-redirect=true";
+        }
 
-        // ✅ CAS A : le créneau est passé
+        // --- Check creneau timing (CAS A, B, C) ---
         if (CreneauDAO.isAfterCreneau(creneau)) {
             message = "⛔ Créneau passé… Veuillez choisir un autre créneau.";
             startEnabled = false;
             return "choixCreneau.xhtml?faces-redirect=true";
         }
 
-        // ✅ CAS B : le créneau n'a pas encore commencé
         if (CreneauDAO.isBeforeCreneau(creneau)) {
             message = "⏳ Veuillez attendre l'heure de votre créneau.";
             startEnabled = false;
             return "loginSuccess.xhtml?faces-redirect=true";
         }
 
-        // ✅ CAS C : actuellement dans le créneau
         message = "✅ Vous pouvez démarrer maintenant.";
         startEnabled = true;
 
-        // --- Check for test attempts and success ---
-        TestSettings testSettings = SettingsDAO.get();
-        if (testSettings != null && creneau.getTestId() != null) {
-            int attempts = ResultatDAO.countAttempts(candidat.getId(), creneau.getTestId());
+        // --- Check for test attempts and success using test-specific settings ---
+        if (currentTest != null && currentTest.getId() > 0) { // Ensure currentTest and its ID are valid
+            int attempts = ResultatDAO.countAttempts(candidat.getId(), currentTest.getId());
 
-            if (testSettings.getMaxTentatives() > 0 && attempts >= testSettings.getMaxTentatives()) {
+            if (currentTest.getMaxTentatives() > 0 && attempts >= currentTest.getMaxTentatives()) {
                 showTestPassedMessage = true;
                 startEnabled = false; // Disable start button
 
-                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), creneau.getTestId());
+                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), currentTest.getId());
                 if (lastScore != null) {
-                    int maxScorePossible = testSettings.getNbQuestions() * testSettings.getScoreParQuestion();
+                    int maxScorePossible = currentTest.getNbQuestions() * currentTest.getScoreParQuestion();
                     int scorePercentage = (maxScorePossible > 0) ? (int) Math.round(((double) lastScore / maxScorePossible) * 100) : 0;
 
-                    if (scorePercentage >= testSettings.getSeuilReussite()) {
-                        testPassedMessage = "✅ Vous avez déjà réussi ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                    if (scorePercentage >= currentTest.getSeuilReussite()) {
+                        testPassedMessage = "✅ Vous avez déjà réussi ce test (" + currentTest.getTitre() + ") avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
                     } else {
-                        testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + testSettings.getMaxTentatives() + ") pour ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                        testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + currentTest.getMaxTentatives() + ") pour le test (" + currentTest.getTitre() + ") avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
                     }
                 } else {
-                    testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + testSettings.getMaxTentatives() + ") pour ce test.";
+                    testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + currentTest.getMaxTentatives() + ") pour le test (" + currentTest.getTitre() + ").";
                 }
-            } else if (attempts > 0) { // If attempts made but not maxed, check last result
-                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), creneau.getTestId());
+            } else if (attempts > 0) { // If attempts made but not maxed, check last result for pass
+                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), currentTest.getId());
                 if (lastScore != null) {
-                    int maxScorePossible = testSettings.getNbQuestions() * testSettings.getScoreParQuestion();
+                    int maxScorePossible = currentTest.getNbQuestions() * currentTest.getScoreParQuestion();
                     int scorePercentage = (maxScorePossible > 0) ? (int) Math.round(((double) lastScore / maxScorePossible) * 100) : 0;
 
-                    if (scorePercentage >= testSettings.getSeuilReussite()) {
-                        testPassedMessage = "✅ Vous avez déjà réussi ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                    if (scorePercentage >= currentTest.getSeuilReussite()) {
+                        testPassedMessage = "✅ Vous avez déjà réussi ce test (" + currentTest.getTitre() + ") avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
                         showTestPassedMessage = true;
                         startEnabled = false; // Disable start button if already passed
                     }
@@ -125,7 +138,6 @@ public class LoginBean implements Serializable {
             }
         }
         // --- End check ---
-
         return "loginSuccess.xhtml?faces-redirect=true";
     }
 
@@ -144,6 +156,7 @@ public class LoginBean implements Serializable {
         if (sessionC == null) {
             candidat = null;
             creneau = null;
+            currentTest = null;
             message = null;
             startEnabled = false;
             testPassedMessage = null;
@@ -154,6 +167,7 @@ public class LoginBean implements Serializable {
         candidat = CandidatDAO.findByCodeSession(sessionC.getCodeSession());
         if (candidat == null) {
             creneau = null;
+            currentTest = null;
             message = null;
             startEnabled = false;
             testPassedMessage = null;
@@ -171,6 +185,25 @@ public class LoginBean implements Serializable {
 
         if (creneau == null) {
             message = "Vous n'avez pas encore choisi un créneau.";
+            startEnabled = false;
+            currentTest = null;
+            testPassedMessage = null;
+            showTestPassedMessage = false;
+            return;
+        }
+
+        // Fetch test-specific settings
+        if (creneau.getTestId() != null) {
+            currentTest = TestDAO.findById(creneau.getTestId());
+            if (currentTest == null) {
+                message = "Test introuvable pour ce créneau.";
+                startEnabled = false;
+                testPassedMessage = null;
+                showTestPassedMessage = false;
+                return;
+            }
+        } else {
+            message = "Ce créneau n'est associé à aucun test.";
             startEnabled = false;
             testPassedMessage = null;
             showTestPassedMessage = false;
@@ -198,35 +231,34 @@ public class LoginBean implements Serializable {
         startEnabled = true;
 
         // --- Check for test attempts and success (same logic as login) ---
-        TestSettings testSettings = SettingsDAO.get();
-        if (testSettings != null && creneau.getTestId() != null) {
-            int attempts = ResultatDAO.countAttempts(candidat.getId(), creneau.getTestId());
+        if (currentTest != null && currentTest.getId() > 0) { // Ensure currentTest and its ID are valid
+            int attempts = ResultatDAO.countAttempts(candidat.getId(), currentTest.getId());
 
-            if (testSettings.getMaxTentatives() > 0 && attempts >= testSettings.getMaxTentatives()) {
+            if (currentTest.getMaxTentatives() > 0 && attempts >= currentTest.getMaxTentatives()) {
                 showTestPassedMessage = true;
                 startEnabled = false; // Disable start button
 
-                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), creneau.getTestId());
+                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), currentTest.getId());
                 if (lastScore != null) {
-                    int maxScorePossible = testSettings.getNbQuestions() * testSettings.getScoreParQuestion();
+                    int maxScorePossible = currentTest.getNbQuestions() * currentTest.getScoreParQuestion();
                     int scorePercentage = (maxScorePossible > 0) ? (int) Math.round(((double) lastScore / maxScorePossible) * 100) : 0;
 
-                    if (scorePercentage >= testSettings.getSeuilReussite()) {
-                        testPassedMessage = "✅ Vous avez déjà réussi ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                    if (scorePercentage >= currentTest.getSeuilReussite()) {
+                        testPassedMessage = "✅ Vous avez déjà réussi ce test (" + currentTest.getTitre() + ") avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
                     } else {
-                        testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + testSettings.getMaxTentatives() + ") pour ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                        testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + currentTest.getMaxTentatives() + ") pour le test (" + currentTest.getTitre() + ") avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
                     }
                 } else {
-                    testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + testSettings.getMaxTentatives() + ") pour ce test.";
+                    testPassedMessage = "⛔ Vous avez atteint le nombre maximal de tentatives (" + currentTest.getMaxTentatives() + ") pour le test (" + currentTest.getTitre() + ").";
                 }
-            } else if (attempts > 0) { // If attempts made but not maxed, check last result
-                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), creneau.getTestId());
+            } else if (attempts > 0) { // If attempts made but not maxed, check last result for pass
+                Integer lastScore = ResultatDAO.findLastScore(candidat.getId(), currentTest.getId());
                 if (lastScore != null) {
-                    int maxScorePossible = testSettings.getNbQuestions() * testSettings.getScoreParQuestion();
+                    int maxScorePossible = currentTest.getNbQuestions() * currentTest.getScoreParQuestion();
                     int scorePercentage = (maxScorePossible > 0) ? (int) Math.round(((double) lastScore / maxScorePossible) * 100) : 0;
 
-                    if (scorePercentage >= testSettings.getSeuilReussite()) {
-                        testPassedMessage = "✅ Vous avez déjà réussi ce test avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
+                    if (scorePercentage >= currentTest.getSeuilReussite()) {
+                        testPassedMessage = "✅ Vous avez déjà réussi ce test (" + currentTest.getTitre() + ") avec un score de " + scorePercentage + "% (" + lastScore + "/" + maxScorePossible + ").";
                         showTestPassedMessage = true;
                         startEnabled = false; // Disable start button if already passed
                     }
@@ -250,6 +282,7 @@ public class LoginBean implements Serializable {
         codeSession = null;
         candidat = null;
         creneau = null;
+        currentTest = null; // Reset currentTest
         message = null;
         startEnabled = false;
         testPassedMessage = null;
@@ -262,6 +295,7 @@ public class LoginBean implements Serializable {
 
     public Candidat getCandidat() { return candidat; }
     public Creneau getCreneau() { return creneau; }
+    public model.Test getCurrentTest() { return currentTest; } // Add getter for currentTest
 
     public String getMessage() { return message; }
 
