@@ -53,7 +53,7 @@
     </style>
 </h:head>
 
-<h:body onload="if(#{testBean.settings.duree > 0}) startTimer();" class="bg-light">
+<h:body onload="if(#{testBean.currentTest.duree > 0}) startTimer();" class="bg-light">
 
 <div class="container py-4">
 
@@ -66,9 +66,9 @@
             </div>
         </div>
 
-        <h:panelGroup rendered="#{testBean.settings.duree > 0}">
+        <h:panelGroup rendered="#{testBean.currentTest.duree > 0}">
              <div class="badge text-bg-danger timer-badge" id="timer">
-                Temps restant : #{testBean.settings.duree * 60} sec
+                Temps restant : #{testBean.currentTest.duree * 60} sec
             </div>
         </h:panelGroup>
     </div>
