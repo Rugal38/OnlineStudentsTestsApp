@@ -8,7 +8,7 @@ C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\AdminP
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\AdminQuestionBean.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\AdminReponseBean.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\AdminResultatBean.java
-C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\AdminTestSettingsBean.java
+C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\AdminTestBean.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\ChoixCreneauBean.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\CreneauBean.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\controller\FacesUtil.java
@@ -24,7 +24,6 @@ C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\dao\ParametreGlob
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\dao\QuestionDAO.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\dao\ReponseDAO.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\dao\ResultatDAO.java
-C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\dao\SettingsDAO.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\dao\TestDAO.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\dao\ThemeDAO.java
 C:\Users\bench\eclipse-workspace\GestionTestsJSF\src\main\java\model\AdminUser.java

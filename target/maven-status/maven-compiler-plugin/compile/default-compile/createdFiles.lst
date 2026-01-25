@@ -1,15 +1,14 @@
 dao\connectionTest.class
 dao\ResultatDAO.class
 controller\AdminReponseBean.class
-dao\SettingsDAO.class
 utils\EmailUtil.class
 controller\TestBean.class
 controller\AdminParametreBean.class
 dao\AdminDAO.class
+controller\AdminTestBean.class
 dao\CandidatDAO.class
 controller\FacesUtil.class
 model\TestSettings.class
-controller\AdminTestSettingsBean.class
 dao\ReponseDAO.class
 dao\ThemeDAO.class
 model\AdminUser.class
@@ -41,5 +40,6 @@ controller\AdminDashboardBean$ResultatRow.class
 model\ParametreGlobal.class
 config\DB.class
 model\Question.class
+controller\TestBean$CorrectionQuestion.class
 controller\AdminCreneauBean.class
 model\ResultatView.class
